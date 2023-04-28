@@ -23,7 +23,7 @@ go run main.go #
 
 Then, text the @calendarNoteBot (https://t.me/calendarNoteBot) and do:
 
-1. To add the note:
+1. To add the note (make sure you have the ";" symbol in between the date and the actual message):
 
 ```
 /add 27 April 2023 ; take out the trash
