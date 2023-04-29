@@ -20,5 +20,6 @@ jobs:
       run: go build -v ./...
     - name: test
       run: go test -v ./...
+    # At this stage, it just checks that an image is building successfully
     - name: build-image
       run: docker build -t jorres/calendar-bot .

@@ -37,7 +37,7 @@ func parseAddNoteArguments(args string) (string, string, error) {
 }
 
 func sendMessage(bot *tgbotapi.BotAPI, msg tgbotapi.MessageConfig) {
-	// In tests bot might be equals nil,
+	// TODO In tests bot might be nil, will make proper mocking later
 	// do not sending any messages while testing
 	if bot != nil {
 		bot.Send(msg)
