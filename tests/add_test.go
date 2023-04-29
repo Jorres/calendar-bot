@@ -96,7 +96,7 @@ func TestHandleAddNoteCommandSuccessful(t *testing.T) {
 	}
 }
 
-var testParseAddNoteArgumentsFailsParams = []struct {
+var testHandleAddNoteCommandDateParseFailParams = []struct {
 	date string
 }{
 	{"02/17/2009"},
@@ -118,4 +118,37 @@ var testParseAddNoteArgumentsFailsParams = []struct {
 	{"00 April 9999"},
 	{"01 April 0"},
 	{"01 Апреля 2024"},
+	{"二〇二二年一〇月二二日"},
+}
+
+func testHandleAddNoteCommandDateParseFail(date string, t *testing.T) {
+	note := "Test note"
+
+	// Create a mock message
+	message := &tgbotapi.Message{
+		Chat: &tgbotapi.Chat{ID: 123},
+		Text: fmt.Sprintf("/add %s ; %s", date, note),
+		Entities: &[]tgbotapi.MessageEntity{
+			{
+				Type:   "bot_command",
+				Offset: 0,
+				Length: 4,
+			},
+		},
+		From: &tgbotapi.User{
+			ID: 12345,
+		},
+	}
+
+	// Call the HandleAddNoteCommand function with the mock bot, database, and message
+	err := handlers.HandleAddNoteCommand(nil, nil, message)
+	if err == nil {
+		t.Fatalf("HandleAddNoteCommand (/add) does not return an error: %v", err)
+	}
+}
+
+func TestHandleAddNoteCommandDateParseFail(t *testing.T) {
+	for _, tt := range testHandleAddNoteCommandDateParseFailParams {
+		testHandleAddNoteCommandDateParseFail(tt.date, t)
+	}
 }
