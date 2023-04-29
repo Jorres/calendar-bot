@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 func addNote(db *sql.DB, userID int, day, note string) error {
@@ -36,7 +36,15 @@ func parseAddNoteArguments(args string) (string, string, error) {
 	return day, note, nil
 }
 
-func HandleAddNoteCommand(bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message) {
+func sendMessage(bot *tgbotapi.BotAPI, msg tgbotapi.MessageConfig) {
+	// In tests bot might be equals nil,
+	// do not sending any messages while testing
+	if bot != nil {
+		bot.Send(msg)
+	}
+}
+
+func HandleAddNoteCommand(bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message) error {
 	args := message.CommandArguments()
 	day, note, err := parseAddNoteArguments(args)
 
@@ -44,8 +52,8 @@ func HandleAddNoteCommand(bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Me
 		reply := "Please provide a date and a note in the format: /add <date> ; <note>"
 		msg := tgbotapi.NewMessage(message.Chat.ID, reply)
 		msg.ReplyToMessageID = message.MessageID
-		bot.Send(msg)
-		return
+		sendMessage(bot, msg)
+		return errors.New(reply)
 	}
 
 	date, err := time.Parse("02 January 2006", day)
@@ -53,8 +61,8 @@ func HandleAddNoteCommand(bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Me
 		reply := "Invalid date format. Please use the format: \"dd MMMM yyyy\", e.g., \"27 April 2023\""
 		msg := tgbotapi.NewMessage(message.Chat.ID, reply)
 		msg.ReplyToMessageID = message.MessageID
-		bot.Send(msg)
-		return
+		sendMessage(bot, msg)
+		return errors.New(reply)
 	}
 
 	err = addNote(db, message.From.ID, date.Format("2006-01-02"), note)
@@ -62,12 +70,13 @@ func HandleAddNoteCommand(bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Me
 		reply := "Error adding note. Please try again."
 		msg := tgbotapi.NewMessage(message.Chat.ID, reply)
 		msg.ReplyToMessageID = message.MessageID
-		bot.Send(msg)
-		return
+		sendMessage(bot, msg)
+		return errors.New(reply)
 	}
 
 	reply := fmt.Sprintf("Note successfully added:\nDate: %s\nNote: %s", day, note)
 	msg := tgbotapi.NewMessage(message.Chat.ID, reply)
 	msg.ReplyToMessageID = message.MessageID
-	bot.Send(msg)
+	sendMessage(bot, msg)
+	return nil
 }
