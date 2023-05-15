@@ -44,3 +44,12 @@ Text the @calendarNoteBot (https://t.me/calendarNoteBot) and do:
 ```
 
 Enjoy!
+
+#### Observability
+
+###### Monitoring
+
+TODO clearly write on how we've setup the Elasticsearch + Kibana logging solution 
+
+It is currently deployed on a single machine, debug, non-production-ready 
+because we have no money to deploy high availability Elasticsearch, sorry :(
