@@ -11,8 +11,10 @@ FROM alpine:latest
 
 RUN apk --no-cache add ca-certificates
 
+WORKDIR /app
+
 COPY --from=builder /app/bot /app/bot
 COPY --from=builder /app/token.txt /app/token.txt
 
-WORKDIR /app
-CMD ["/app/bot"]
+CMD ["./bot"]
+# CMD ["/bin/sh", "-c", "sleep 1000"]
