@@ -31,7 +31,7 @@ services:
   calendar-bot:
     image: jorres/calendar-bot
     volumes:
-      - ./logs:/app
+      - ./logs:/logs
 
 volumes:
   esdata:
