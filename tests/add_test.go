@@ -9,6 +9,7 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	_ "github.com/mattn/go-sqlite3"
+	"go.uber.org/zap"
 )
 
 var testHandleAddNoteCommandSuccessfulParams = []struct {
@@ -30,7 +31,6 @@ var testHandleAddNoteCommandSuccessfulParams = []struct {
 }
 
 func testHandleAddNoteCommandSuccessful(date string, note string, t *testing.T) {
-	// Create a mock SQL database
 	db, err := utils.InitDB("test.db")
 	if err != nil {
 		t.Fatalf("Failed to open mock database: %v", err)
@@ -38,7 +38,6 @@ func testHandleAddNoteCommandSuccessful(date string, note string, t *testing.T) 
 	defer db.Close()
 	db.SetMaxOpenConns(1)
 
-	// Create a mock message
 	message := &tgbotapi.Message{
 		Chat: &tgbotapi.Chat{ID: 123},
 		Text: fmt.Sprintf("/add %s ; %s", date, note),
@@ -54,8 +53,12 @@ func testHandleAddNoteCommandSuccessful(date string, note string, t *testing.T) 
 		},
 	}
 
-	// Call the HandleAddNoteCommand function with the mock bot, database, and message
-	err = handlers.HandleAddNoteCommand(nil, db, message)
+	logger, err := zap.NewProduction()
+	if err != nil {
+		panic(err)
+	}
+
+	err = handlers.HandleAddNoteCommand(logger, nil, db, message)
 	if err != nil {
 		t.Fatalf("HandleAddNoteCommand (/add) returned an error: %v", err)
 	}
@@ -71,7 +74,6 @@ func testHandleAddNoteCommandSuccessful(date string, note string, t *testing.T) 
 		t.Errorf("HandleAddNoteCommand did not add note to database")
 	}
 
-	// Scan what returned SELECT query
 	for rows.Next() {
 		var res_note string
 		err = rows.Scan(&res_note)
@@ -83,7 +85,6 @@ func testHandleAddNoteCommandSuccessful(date string, note string, t *testing.T) 
 		}
 	}
 
-	// Delete rows from database for next test scenarios
 	_, err = db.Exec("DROP TABLE notes")
 	if err != nil {
 		t.Fatalf("Failed to drop table from mock database: %v", err)
@@ -122,6 +123,11 @@ var testHandleAddNoteCommandDateParseFailParams = []struct {
 }
 
 func testHandleAddNoteCommandDateParseFail(date string, t *testing.T) {
+	logger, err := zap.NewProduction()
+	if err != nil {
+		panic(err)
+	}
+
 	note := "Test note"
 
 	// Create a mock message
@@ -140,8 +146,7 @@ func testHandleAddNoteCommandDateParseFail(date string, t *testing.T) {
 		},
 	}
 
-	// Call the HandleAddNoteCommand function with the mock bot, database, and message
-	err := handlers.HandleAddNoteCommand(nil, nil, message)
+	err = handlers.HandleAddNoteCommand(logger, nil, nil, message)
 	if err == nil {
 		t.Fatalf("HandleAddNoteCommand (/add) does not return an error: %v", err)
 	}
