@@ -3,20 +3,23 @@ package handlers
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"go.uber.org/zap"
 )
 
-func addNote(db *sql.DB, userID int, day, note string) error {
+func addNote(logger *zap.Logger, db *sql.DB, userID int, day, note string) error {
 	insertNoteQuery := `
 	INSERT INTO notes (user_id, day, note)
 	VALUES (?, ?, ?)
 	`
 
 	_, err := db.Exec(insertNoteQuery, userID, day, note)
+	if err != nil {
+		logger.Error("Error inserting note into database", zap.Error(err))
+	}
 	return err
 }
 
@@ -36,15 +39,18 @@ func parseAddNoteArguments(args string) (string, string, error) {
 	return day, note, nil
 }
 
-func sendMessage(bot *tgbotapi.BotAPI, msg tgbotapi.MessageConfig) {
+func sendMessage(logger *zap.Logger, bot *tgbotapi.BotAPI, msg tgbotapi.MessageConfig) {
 	// TODO In tests bot might be nil, will make proper mocking later
-	// do not sending any messages while testing
+	// This is to not send any messages while testing
 	if bot != nil {
-		bot.Send(msg)
+		_, err := bot.Send(msg)
+		if err != nil {
+			logger.Error("Error sending message", zap.Error(err))
+		}
 	}
 }
 
-func HandleAddNoteCommand(bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message) error {
+func HandleAddNoteCommand(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message) error {
 	args := message.CommandArguments()
 	day, note, err := parseAddNoteArguments(args)
 
@@ -52,7 +58,7 @@ func HandleAddNoteCommand(bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Me
 		reply := "Please provide a date and a note in the format: /add <date> ; <note>"
 		msg := tgbotapi.NewMessage(message.Chat.ID, reply)
 		msg.ReplyToMessageID = message.MessageID
-		sendMessage(bot, msg)
+		sendMessage(logger, bot, msg)
 		return errors.New(reply)
 	}
 
@@ -61,22 +67,22 @@ func HandleAddNoteCommand(bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Me
 		reply := "Invalid date format. Please use the format: \"dd MMMM yyyy\", e.g., \"27 April 2023\""
 		msg := tgbotapi.NewMessage(message.Chat.ID, reply)
 		msg.ReplyToMessageID = message.MessageID
-		sendMessage(bot, msg)
+		sendMessage(logger, bot, msg)
 		return errors.New(reply)
 	}
 
-	err = addNote(db, message.From.ID, date.Format("2006-01-02"), note)
+	err = addNote(logger, db, message.From.ID, date.Format("2006-01-02"), note)
 	if err != nil {
 		reply := "Error adding note. Please try again."
 		msg := tgbotapi.NewMessage(message.Chat.ID, reply)
 		msg.ReplyToMessageID = message.MessageID
-		sendMessage(bot, msg)
+		sendMessage(logger, bot, msg)
 		return errors.New(reply)
 	}
 
 	reply := fmt.Sprintf("Note successfully added:\nDate: %s\nNote: %s", day, note)
 	msg := tgbotapi.NewMessage(message.Chat.ID, reply)
 	msg.ReplyToMessageID = message.MessageID
-	sendMessage(bot, msg)
+	sendMessage(logger, bot, msg)
 	return nil
 }

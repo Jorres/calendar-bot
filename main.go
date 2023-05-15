@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -13,35 +12,43 @@ import (
 
 	"calendarbot/handlers"
 	"calendarbot/utils"
+	"go.uber.org/zap"
 )
 
 func main() {
+	logger, err := zap.NewProduction()
+	if err != nil {
+		panic(err)
+	}
+
+	defer logger.Sync()
+
 	tokenFile := "token.txt"
 	botToken, err := readTokenFromFile(tokenFile)
 	if err != nil {
-		log.Panicf("Error reading token from file %s: %v", tokenFile, err)
+		logger.Panic("Error reading token from file", zap.String("file", tokenFile), zap.Error(err))
 	}
 
 	db, err := utils.InitDB("notes.db")
 	if err != nil {
-		log.Panicf("Error initializing database: %v", err)
+		logger.Panic("Error initializing database", zap.Error(err))
 	}
 	defer db.Close()
 
 	bot, err := tgbotapi.NewBotAPI(botToken)
 	if err != nil {
-		log.Panic(err)
+		logger.Panic("Error creating new Bot API", zap.Error(err))
 	}
 
 	bot.Debug = true
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	logger.Info("Authorized on account", zap.String("account", bot.Self.UserName))
 
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 60
 
 	updates, err := bot.GetUpdatesChan(updateConfig)
 	if err != nil {
-		log.Panic(err)
+		logger.Panic("Error getting updates channel", zap.Error(err))
 	}
 
 	for update := range updates {
@@ -49,14 +56,17 @@ func main() {
 			continue
 		}
 
-		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+		logger.Info("Received message",
+			zap.String("user", update.Message.From.UserName),
+			zap.String("text", update.Message.Text),
+		)
 
 		if update.Message.IsCommand() {
 			switch update.Message.Command() {
 			case "add":
-				handlers.HandleAddNoteCommand(bot, db, update.Message)
+				handlers.HandleAddNoteCommand(logger, bot, db, update.Message)
 			case "show":
-				handlers.HandleShowNotesCommand(bot, db, update.Message)
+				handlers.HandleShowNotesCommand(logger, bot, db, update.Message)
 			default:
 				fmt.Println(update.Message.Command())
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Unknown command.")
