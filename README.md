@@ -23,7 +23,7 @@ go test -v ./...
   print all the logging info to console:
 
 ```bash
-go run main.go #
+go run main.go
 ```
 
 #### Interacting with the bot
