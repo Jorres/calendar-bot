@@ -33,6 +33,9 @@ services:
     image: jorres/calendar-bot
     volumes:
       - ./logs:/app/logs
+    depends_on:
+      - elasticsearch
+      - filebeat
 
 volumes:
   esdata:

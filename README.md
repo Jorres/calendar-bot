@@ -54,5 +54,5 @@ Obviously, it is a debug and testing setup, not a production ready one. We simpl
 don't have money to run production-ready ElasticSearch, sorry :(
 
 However, you can search the logs of our application using a public ipv4-address
-of the machine. Kibana is available at http://62.84.118.209:5601, login-less access
+of the machine. Kibana is available at http://158.160.42.148:5601/app/discover, login-less access
 is provided for the simplicity of testing and checking.
