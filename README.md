@@ -49,7 +49,10 @@ Enjoy!
 
 ###### Monitoring
 
-TODO clearly write on how we've setup the Elasticsearch + Kibana logging solution 
+On the machine where the bot is hosted, ElasticSearch + Kibana stack has been deployed.
+Obviously, it is a debug and testing setup, not a production ready one. We simply
+don't have money to run production-ready ElasticSearch, sorry :(
 
-It is currently deployed on a single machine, debug, non-production-ready 
-because we have no money to deploy high availability Elasticsearch, sorry :(
+However, you can search the logs of our application using a public ipv4-address
+of the machine. Kibana is available at http://62.84.118.209:5601, login-less access
+is provided for the simplicity of testing and checking.
