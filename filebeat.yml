@@ -2,7 +2,7 @@ filebeat.inputs:
 - type: log
   enabled: true
   paths:
-    - /app/calendar-bot.log
+    - /app/calendarbot.log
 
 output.elasticsearch:
   hosts: ["elasticsearch:9200"]

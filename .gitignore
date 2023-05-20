@@ -2,3 +2,4 @@ notes.db
 token.txt
 .gitignore
 test.db
+logs
