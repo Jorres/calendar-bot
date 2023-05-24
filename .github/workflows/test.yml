@@ -23,6 +23,7 @@ jobs:
     - name: init-token
       run: |
         echo ${{ secrets.TELEGRAM_BOT_TOKEN }} > token.txt
+        echo ${{ secrets.BOT_ID }} > bot_id.txt
         docker login --username=${{ secrets.DOCKER_USERNAME }} --password-stdin <<<'${{ secrets.DOCKER_PASSWORD }}'
         docker build -t jorres/calendar-bot:latest .
         docker push jorres/calendar-bot
