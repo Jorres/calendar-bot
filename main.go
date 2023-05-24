@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -85,10 +84,7 @@ func main() {
 			case "permissions":
 				handlers.HandlePermissionsCommand(logger, bot, db, update.Message, &updates, botID)
 			default:
-				fmt.Println(update.Message.Command())
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Unknown command.")
-				msg.ReplyToMessageID = update.Message.MessageID
-				bot.Send(msg)
+				utils.ReplyMessage(logger, bot, update.Message, "Unknown command.")
 			}
 		}
 	}

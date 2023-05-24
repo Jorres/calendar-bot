@@ -12,8 +12,7 @@ import (
 )
 
 func waitForForwardedMessage(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message, updates *tgbotapi.UpdatesChannel, botID int64) {
-	reply := "Please forward here a message from user you want to grant your notes."
-	bot.Send(tgbotapi.NewMessage(message.Chat.ID, reply))
+	utils.ReplyMessage(logger, bot, message, "Please forward here a message from user you want to grant your notes.")
 
 	for update := range *updates {
 		if update.Message == nil {
@@ -30,25 +29,22 @@ func waitForForwardedMessage(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.D
 		)
 
 		if update.Message.ForwardFrom == nil {
-			reply := "It is not forwarded message. No new users will be added"
-			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, reply))
+			utils.ReplyMessage(logger, bot, update.Message, "It is not forwarded message. No new users will be added")
 			return
 		}
 
 		if update.Message.ForwardFrom.ID == message.From.ID {
-			reply := "It is your message. No new users will be added"
-			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, reply))
+			utils.ReplyMessage(logger, bot, update.Message, "It is your message. No new users will be added")
 		} else if update.Message.ForwardFrom.ID == botID {
-			reply := "Ooh! So glad you like me :) However, I can't afford to look at your wonderful notes, sorry..."
-			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, reply))
+			utils.ReplyMessage(logger, bot, update.Message, "Ooh! So glad you like me :) However, I can't afford to look at your wonderful notes, sorry...")
 		} else {
 			inserted, err := utils.ChaeckAndInsertNewGrantedUser(logger, db, message.From.ID, update.Message.From)
 			if err != nil {
 				logger.Error("Error in waiting forwarded message", zap.Error(err))
 			} else if !inserted {
-				bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "The user is already granted to your notes!"))
+				utils.ReplyMessage(logger, bot, update.Message, "The user is already granted to your notes!")
 			} else {
-				bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Successfully granted!"))
+				utils.ReplyMessage(logger, bot, update.Message, "Successfully granted!")
 			}
 		}
 		return
@@ -56,16 +52,7 @@ func waitForForwardedMessage(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.D
 }
 
 func sendNotGrantedMessageAndWait(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message, updates *tgbotapi.UpdatesChannel, botID int64) {
-	first_message := "You have not granted your notes to anyone. Would you like to add someone?"
-	msg := tgbotapi.NewMessage(message.Chat.ID, first_message)
-
-	msg.ReplyMarkup = tgbotapi.NewOneTimeReplyKeyboard(
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("Yes"),
-			tgbotapi.NewKeyboardButton("No"),
-		),
-	)
-	bot.Send(msg)
+	utils.ReplyMessageWithOneTimeKeyboard(logger, bot, message, "You have not granted your notes to anyone. Would you like to add someone?", "Yes", "No")
 
 	for update := range *updates {
 		if update.Message == nil {
@@ -74,7 +61,7 @@ func sendNotGrantedMessageAndWait(logger *zap.Logger, bot *tgbotapi.BotAPI, db *
 
 		answer := update.Message.Text
 		if answer == "No" {
-			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Okay"))
+			utils.ReplyMessage(logger, bot, update.Message, "Okay")
 			return
 		} else if answer == "Yes" {
 			waitForForwardedMessage(logger, bot, db, update.Message, updates, botID)
@@ -92,18 +79,8 @@ func sendListMessageAndWait(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB
 			break
 		}
 	}
-	bot.Send(tgbotapi.NewMessage(message.Chat.ID, reply))
-
-	question_reply := "Would you like add more or erase all of them?"
-	msg := tgbotapi.NewMessage(message.Chat.ID, question_reply)
-
-	msg.ReplyMarkup = tgbotapi.NewOneTimeReplyKeyboard(
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("Add"),
-			tgbotapi.NewKeyboardButton("Erase"),
-		),
-	)
-	bot.Send(msg)
+	utils.ReplyMessage(logger, bot, message, reply)
+	utils.ReplyMessageWithOneTimeKeyboard(logger, bot, message, "Would you like add more or erase all of them?", "Add", "Erase")
 
 	for update := range *updates {
 		if update.Message == nil {
@@ -119,9 +96,9 @@ func sendListMessageAndWait(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB
 			if err != nil {
 				msg := "An error occurred while deleting all granted users"
 				logger.Error(msg, zap.Error(err))
-				bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, msg+". Please try later."))
+				utils.ReplyMessage(logger, bot, update.Message, msg+". Please try later.")
 			} else {
-				bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Successfully deleted!"))
+				utils.ReplyMessage(logger, bot, update.Message, "Successfully deleted!")
 			}
 			return
 		}
@@ -131,13 +108,7 @@ func sendListMessageAndWait(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB
 func HandlePermissionsCommand(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message, updates *tgbotapi.UpdatesChannel, botID int64) {
 	granted_users, err := utils.GetUserPermissions(logger, db, message.From.ID)
 	if err != nil {
-		reply := "Error while getting permissions. Please try again later."
-		msg := tgbotapi.NewMessage(message.Chat.ID, reply)
-		msg.ReplyToMessageID = message.MessageID
-		_, err := bot.Send(msg)
-		if err != nil {
-			logger.Error("Error sending message", zap.Error(err))
-		}
+		utils.ReplyMessage(logger, bot, message, "Error while getting permissions. Please try again later.")
 		return
 	}
 

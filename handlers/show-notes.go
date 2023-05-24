@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"calendarbot/utils"
 	"database/sql"
 	"fmt"
 	"strings"
@@ -41,32 +42,14 @@ func getUserNotes(logger *zap.Logger, db *sql.DB, userID int64) ([]string, error
 func HandleShowNotesCommand(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message) {
 	notes, err := getUserNotes(logger, db, message.From.ID)
 	if err != nil {
-		reply := "Error fetching notes. Please try again."
-		msg := tgbotapi.NewMessage(message.Chat.ID, reply)
-		msg.ReplyToMessageID = message.MessageID
-		_, err := bot.Send(msg)
-		if err != nil {
-			logger.Error("Error sending message", zap.Error(err))
-		}
+		utils.ReplyMessage(logger, bot, message, "Error fetching notes. Please try again.")
 		return
 	}
 
 	if len(notes) == 0 {
-		reply := "You have no notes."
-		msg := tgbotapi.NewMessage(message.Chat.ID, reply)
-		msg.ReplyToMessageID = message.MessageID
-		_, err := bot.Send(msg)
-		if err != nil {
-			logger.Error("Error sending message", zap.Error(err))
-		}
+		utils.ReplyMessage(logger, bot, message, "You have no notes.")
 		return
 	}
 
-	reply := "Here are your notes:\n\n" + strings.Join(notes, "\n")
-	msg := tgbotapi.NewMessage(message.Chat.ID, reply)
-	msg.ReplyToMessageID = message.MessageID
-	_, err = bot.Send(msg)
-	if err != nil {
-		logger.Error("Error sending message", zap.Error(err))
-	}
+	utils.ReplyMessage(logger, bot, message, "Here are your notes:\n\n"+strings.Join(notes, "\n"))
 }
