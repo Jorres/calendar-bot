@@ -29,7 +29,13 @@ func waitForForwardedMessage(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.D
 			zap.String("message_json", string(json_msg)),
 		)
 
-		if update.Message.From.ID == message.From.ID {
+		if update.Message.ForwardFrom == nil {
+			reply := "It is not forwarded message. No new users will be added"
+			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, reply))
+			return
+		}
+
+		if update.Message.ForwardFrom.ID == message.From.ID {
 			reply := "It is your message. No new users will be added"
 			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, reply))
 			return
