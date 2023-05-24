@@ -3,6 +3,7 @@ package utils
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
@@ -81,6 +82,7 @@ func GetUserPermissions(logger *zap.Logger, db *sql.DB, userID int64) ([]string,
 		granted_users = append(granted_users, login)
 	}
 
+	logger.Info("Granted users: [" + strings.Join(granted_users, ", ") + "]")
 	return granted_users, nil
 }
 
