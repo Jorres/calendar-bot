@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
 )
@@ -41,7 +41,7 @@ func testHandleAddNoteCommandSuccessful(date string, note string, t *testing.T) 
 	message := &tgbotapi.Message{
 		Chat: &tgbotapi.Chat{ID: 123},
 		Text: fmt.Sprintf("/add %s ; %s", date, note),
-		Entities: &[]tgbotapi.MessageEntity{
+		Entities: []tgbotapi.MessageEntity{
 			{
 				Type:   "bot_command",
 				Offset: 0,
@@ -134,7 +134,7 @@ func testHandleAddNoteCommandDateParseFail(date string, t *testing.T) {
 	message := &tgbotapi.Message{
 		Chat: &tgbotapi.Chat{ID: 123},
 		Text: fmt.Sprintf("/add %s ; %s", date, note),
-		Entities: &[]tgbotapi.MessageEntity{
+		Entities: []tgbotapi.MessageEntity{
 			{
 				Type:   "bot_command",
 				Offset: 0,

@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"strings"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 )
 
-func getUserNotes(logger *zap.Logger, db *sql.DB, userID int) ([]string, error) {
+func getUserNotes(logger *zap.Logger, db *sql.DB, userID int64) ([]string, error) {
 	selectUserNotesQuery := `
 	SELECT day, note
 	FROM notes

@@ -24,9 +24,17 @@ func InitDB(filename string) (*sql.DB, error) {
 		createTableQuery := `
 		CREATE TABLE IF NOT EXISTS notes (
 			id INTEGER PRIMARY KEY,
-			user_id INTEGER,
+			user_id BIGINT,
 			day TEXT,
 			note TEXT
+		);
+
+		CREATE TABLE IF NOT EXISTS permissions (
+			user_id BIGINT,
+			granted_user_id BIGINT,
+			granted_user_login TEXT,
+
+			CONSTRAINT unique__user_id__granted_user_id UNIQUE (user_id, granted_user_id)
 		);
 		`
 

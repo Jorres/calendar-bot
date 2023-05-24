@@ -3,15 +3,15 @@ package handlers
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
-	"fmt"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 )
 
-func addNote(logger *zap.Logger, db *sql.DB, userID int, day, note string) error {
+func addNote(logger *zap.Logger, db *sql.DB, userID int64, day, note string) error {
 	insertNoteQuery := `
 	INSERT INTO notes (user_id, day, note)
 	VALUES (?, ?, ?)

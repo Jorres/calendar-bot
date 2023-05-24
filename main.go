@@ -6,12 +6,13 @@ import (
 	"os"
 	"strings"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	_ "github.com/mattn/go-sqlite3"
 
 	"calendarbot/handlers"
 	"calendarbot/utils"
+
 	"go.uber.org/zap"
 )
 
@@ -52,11 +53,7 @@ func main() {
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 60
 
-	updates, err := bot.GetUpdatesChan(updateConfig)
-	if err != nil {
-		logger.Panic("Error getting updates channel", zap.Error(err))
-	}
-
+	updates := bot.GetUpdatesChan(updateConfig)
 	for update := range updates {
 		if update.Message == nil {
 			continue
@@ -73,6 +70,8 @@ func main() {
 				handlers.HandleAddNoteCommand(logger, bot, db, update.Message)
 			case "show":
 				handlers.HandleShowNotesCommand(logger, bot, db, update.Message)
+			case "permissions":
+				handlers.HandlePermissionsCommand(logger, bot, db, update.Message, &updates)
 			default:
 				fmt.Println(update.Message.Command())
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Unknown command.")
