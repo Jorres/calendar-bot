@@ -11,8 +11,8 @@ import (
 	"calendarbot/utils"
 )
 
-func waitForForwardedMessage(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message, updates *tgbotapi.UpdatesChannel) {
-	reply := "Please forward here a message from user you want grant to your notes."
+func waitForForwardedMessage(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message, updates *tgbotapi.UpdatesChannel, botID int64) {
+	reply := "Please forward here a message from user you want to grant your notes."
 	bot.Send(tgbotapi.NewMessage(message.Chat.ID, reply))
 
 	for update := range *updates {
@@ -38,7 +38,9 @@ func waitForForwardedMessage(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.D
 		if update.Message.ForwardFrom.ID == message.From.ID {
 			reply := "It is your message. No new users will be added"
 			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, reply))
-			return
+		} else if update.Message.ForwardFrom.ID == botID {
+			reply := "Ooh! So glad you like me :) However, I can't afford to look at your wonderful notes, sorry..."
+			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, reply))
 		} else {
 			inserted, err := utils.ChaeckAndInsertNewGrantedUser(logger, db, message.From.ID, update.Message.From)
 			if err != nil {
@@ -48,12 +50,12 @@ func waitForForwardedMessage(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.D
 			} else {
 				bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Successfully granted!"))
 			}
-			return
 		}
+		return
 	}
 }
 
-func sendNotGrantedMessageAndWait(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message, updates *tgbotapi.UpdatesChannel) {
+func sendNotGrantedMessageAndWait(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message, updates *tgbotapi.UpdatesChannel, botID int64) {
 	first_message := "You have not granted your notes to anyone. Would you like to add someone?"
 	msg := tgbotapi.NewMessage(message.Chat.ID, first_message)
 
@@ -75,13 +77,13 @@ func sendNotGrantedMessageAndWait(logger *zap.Logger, bot *tgbotapi.BotAPI, db *
 			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Okay"))
 			return
 		} else if answer == "Yes" {
-			waitForForwardedMessage(logger, bot, db, update.Message, updates)
+			waitForForwardedMessage(logger, bot, db, update.Message, updates, botID)
 			return
 		}
 	}
 }
 
-func sendListMessageAndWait(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message, updates *tgbotapi.UpdatesChannel, granted_users []string) {
+func sendListMessageAndWait(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message, updates *tgbotapi.UpdatesChannel, granted_users []string, botID int64) {
 	reply := "You have already granted your notes to:"
 	for _, user := range granted_users {
 		reply = fmt.Sprintf("%s @%s", reply, user)
@@ -110,7 +112,7 @@ func sendListMessageAndWait(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB
 
 		answer := update.Message.Text
 		if answer == "Add" {
-			waitForForwardedMessage(logger, bot, db, update.Message, updates)
+			waitForForwardedMessage(logger, bot, db, update.Message, updates, botID)
 			return
 		} else if answer == "Erase" {
 			err := utils.DeleteAllGrantedUsers(logger, db, update.Message.From.ID)
@@ -126,7 +128,7 @@ func sendListMessageAndWait(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB
 	}
 }
 
-func HandlePermissionsCommand(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message, updates *tgbotapi.UpdatesChannel) {
+func HandlePermissionsCommand(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message, updates *tgbotapi.UpdatesChannel, botID int64) {
 	granted_users, err := utils.GetUserPermissions(logger, db, message.From.ID)
 	if err != nil {
 		reply := "Error while getting permissions. Please try again later."
@@ -140,8 +142,8 @@ func HandlePermissionsCommand(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.
 	}
 
 	if len(granted_users) == 0 {
-		sendNotGrantedMessageAndWait(logger, bot, db, message, updates)
+		sendNotGrantedMessageAndWait(logger, bot, db, message, updates, botID)
 	} else {
-		sendListMessageAndWait(logger, bot, db, message, updates, granted_users)
+		sendListMessageAndWait(logger, bot, db, message, updates, granted_users, botID)
 	}
 }

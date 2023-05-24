@@ -41,7 +41,7 @@ func checkGrantedUserExists(logger *zap.Logger, db *sql.DB, userID int64, grante
 func insertGrantedUser(logger *zap.Logger, db *sql.DB, userID int64, grantedUser *tgbotapi.User) error {
 	kInsertNewGrantedUser := `
 	INSERT INTO permissions (user_id, granted_user_id, granted_user_login)
-	VALUES (? ? ?);
+	VALUES (?, ?, ?);
 	`
 
 	_, err := db.Exec(kInsertNewGrantedUser, userID, grantedUser.ID, grantedUser.UserName)
