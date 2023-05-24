@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -19,9 +20,19 @@ func waitForForwardedMessage(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.D
 			continue
 		}
 
+		json_msg, err := json.Marshal(update.Message)
+		if err != nil {
+			logger.Error("Cannot convert message into json", zap.Error(err))
+			return
+		}
+		logger.Info("Forwarded message",
+			zap.String("message_json", string(json_msg)),
+		)
+
 		if update.Message.From.ID == message.From.ID {
 			reply := "It is your message. No new users will be added"
 			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, reply))
+			return
 		} else {
 			inserted, err := utils.ChaeckAndInsertNewGrantedUser(logger, db, message.From.ID, update.Message.From)
 			if err != nil {
