@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -34,6 +35,17 @@ func main() {
 	botToken, err := readTokenFromFile(tokenFile)
 	if err != nil {
 		logger.Panic("Error reading token from file", zap.String("file", tokenFile), zap.Error(err))
+	}
+
+	botIDStr, err := readTokenFromFile("bot_id.txt")
+	if err != nil {
+		logger.Panic("Could not read bot_id.txt", zap.Error(err))
+		return
+	}
+	botID, err := strconv.ParseInt(botIDStr, 10, 64)
+	if err != nil {
+		logger.Panic("Could not parse bot_id", zap.Error(err))
+		return
 	}
 
 	db, err := utils.InitDB("notes.db")
@@ -71,7 +83,7 @@ func main() {
 			case "show":
 				handlers.HandleShowNotesCommand(logger, bot, db, update.Message)
 			case "permissions":
-				handlers.HandlePermissionsCommand(logger, bot, db, update.Message, &updates)
+				handlers.HandlePermissionsCommand(logger, bot, db, update.Message, &updates, botID)
 			default:
 				fmt.Println(update.Message.Command())
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Unknown command.")

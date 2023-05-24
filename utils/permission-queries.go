@@ -2,6 +2,8 @@ package utils
 
 import (
 	"database/sql"
+	"fmt"
+	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
@@ -30,22 +32,27 @@ func checkGrantedUserExists(logger *zap.Logger, db *sql.DB, userID int64, grante
 			logger.Error("Error scanning kGetGrantedUser", zap.Error(err))
 			return false, err
 		}
+		logger.Debug("Fetched from permissions. cnt = " + fmt.Sprint(cnt))
 		return cnt > 0, nil
 	}
+	logger.Debug("Could not get rows.Next() while fetching permissions")
 	return false, err
 }
 
 func insertGrantedUser(logger *zap.Logger, db *sql.DB, userID int64, grantedUser *tgbotapi.User) error {
 	kInsertNewGrantedUser := `
 	INSERT INTO permissions (user_id, granted_user_id, granted_user_login)
-	VALUES (? ? ?);
+	VALUES (?, ?, ?);
 	`
 
 	_, err := db.Exec(kInsertNewGrantedUser, userID, grantedUser.ID, grantedUser.UserName)
 	if err != nil {
 		logger.Error("Error inserting note into database", zap.Error(err))
+		return err
 	}
-	return err
+
+	logger.Debug(fmt.Sprintf("Successfully inserted user_id=%d, granted_user_id=%d", userID, grantedUser.ID))
+	return nil
 }
 
 func GetUserPermissions(logger *zap.Logger, db *sql.DB, userID int64) ([]string, error) {
@@ -75,6 +82,7 @@ func GetUserPermissions(logger *zap.Logger, db *sql.DB, userID int64) ([]string,
 		granted_users = append(granted_users, login)
 	}
 
+	logger.Info("Granted users: [" + strings.Join(granted_users, ", ") + "]")
 	return granted_users, nil
 }
 

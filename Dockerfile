@@ -15,6 +15,7 @@ WORKDIR /app
 
 COPY --from=builder /app/bot /app/bot
 COPY --from=builder /app/token.txt /app/token.txt
+COPY --from=builder /app/bot_id.txt /app/bot_id.txt
 RUN mkdir /app/logs
 
 CMD ["./bot"]
