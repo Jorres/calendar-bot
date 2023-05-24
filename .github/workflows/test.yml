@@ -20,9 +20,17 @@ jobs:
       run: go build -v ./...
     - name: test
       run: go test -v ./...
-    - name: test-image-builds
+    - name: init-token
       run: |
-        # For testing purposes, we just fake a file with the token. 
-        # The image built there is not going to be deployed anyway.
-        echo "abc" > token.txt
-        docker build -t jorres/calendar-bot .
+        echo ${{ secrets.TELEGRAM_BOT_TOKEN }} > token.txt
+    - name: Log in to Docker Hub
+      uses: docker/login-action
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Build and push Docker image
+      uses: docker/build-push-action
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
