@@ -157,3 +157,8 @@ func TestHandleAddNoteCommandDateParseFail(t *testing.T) {
 		testHandleAddNoteCommandDateParseFail(tt.date, t)
 	}
 }
+
+// Uncomment for test locally
+// func TestMain(t *testing.T) {
+// 	defer run.Run()
+// }

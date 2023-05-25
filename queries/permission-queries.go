@@ -1,4 +1,4 @@
-package utils
+package queries
 
 import (
 	"database/sql"
@@ -39,27 +39,30 @@ func checkGrantedUserExists(logger *zap.Logger, db *sql.DB, userID int64, grante
 	return false, err
 }
 
-func insertGrantedUser(logger *zap.Logger, db *sql.DB, userID int64, grantedUser *tgbotapi.User) error {
+func insertGrantedUser(logger *zap.Logger, db *sql.DB, user, grantedUser *tgbotapi.User) error {
+	InsertUser(logger, db, user)
+	InsertUser(logger, db, grantedUser)
+
 	kInsertNewGrantedUser := `
-	INSERT INTO permissions (user_id, granted_user_id, granted_user_login)
-	VALUES (?, ?, ?);
+	INSERT INTO permissions (user_id, granted_user_id)
+	VALUES (?, ?);
 	`
 
-	_, err := db.Exec(kInsertNewGrantedUser, userID, grantedUser.ID, grantedUser.UserName)
+	_, err := db.Exec(kInsertNewGrantedUser, user.ID, grantedUser.ID)
 	if err != nil {
 		logger.Error("Error inserting note into database", zap.Error(err))
 		return err
 	}
 
-	logger.Debug(fmt.Sprintf("Successfully inserted user_id=%d, granted_user_id=%d", userID, grantedUser.ID))
+	logger.Debug(fmt.Sprintf("Successfully inserted user_id=%d, granted_user_id=%d", user.ID, grantedUser.ID))
 	return nil
 }
 
 func GetUserPermissions(logger *zap.Logger, db *sql.DB, userID int64) ([]string, error) {
 	kGetPermissions := `
-	SELECT DISTINCT p.granted_user_login
-	FROM permissions p 
-	INNER JOIN notes n ON p.granted_user_id = n.user_id 
+	SELECT u.name
+	FROM permissions p
+	INNER JOIN users u ON p.granted_user_id = u.id
 	WHERE p.user_id = ?;
 	`
 
@@ -86,8 +89,37 @@ func GetUserPermissions(logger *zap.Logger, db *sql.DB, userID int64) ([]string,
 	return granted_users, nil
 }
 
-func ChaeckAndInsertNewGrantedUser(logger *zap.Logger, db *sql.DB, userID int64, grantedUser *tgbotapi.User) (bool, error) {
-	exists, err := checkGrantedUserExists(logger, db, userID, grantedUser)
+func CheckUserGavePermission(logger *zap.Logger, db *sql.DB, userID int64, grantedUser string) (bool, int64, error) {
+	kHasPermission := `
+	SELECT p.granted_user_id, p.user_id
+	FROM permissions p
+	INNER JOIN users u ON u.id = p.user_id
+	WHERE u.name = ?
+	`
+
+	rows, err := db.Query(kHasPermission, grantedUser)
+	if err != nil {
+		logger.Error("Error while getting user permission", zap.Error(err))
+		return false, 0, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var granted_user_id, user_id int64
+		err := rows.Scan(&granted_user_id, &user_id)
+		if err != nil {
+			logger.Error("Error while scanning row", zap.Error(err))
+			return false, 0, err
+		}
+		return granted_user_id == userID, user_id, nil
+	}
+
+	// No rows - user did not grant an access
+	return false, 0, nil
+}
+
+func ChaeckAndInsertNewGrantedUser(logger *zap.Logger, db *sql.DB, user, grantedUser *tgbotapi.User) (bool, error) {
+	exists, err := checkGrantedUserExists(logger, db, user.ID, grantedUser)
 	if err != nil {
 		logger.Error("Check if granted user exists failed", zap.Error(err))
 		return false, err
@@ -98,7 +130,7 @@ func ChaeckAndInsertNewGrantedUser(logger *zap.Logger, db *sql.DB, userID int64,
 		return false, err
 	}
 
-	err = insertGrantedUser(logger, db, userID, grantedUser)
+	err = insertGrantedUser(logger, db, user, grantedUser)
 	if err != nil {
 		logger.Error("Insertion of granted user failed", zap.Error(err))
 		return false, err

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"calendarbot/queries"
 	"calendarbot/utils"
 	"database/sql"
 	"errors"
@@ -11,19 +12,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 )
-
-func addNote(logger *zap.Logger, db *sql.DB, userID int64, day, note string) error {
-	insertNoteQuery := `
-	INSERT INTO notes (user_id, day, note)
-	VALUES (?, ?, ?)
-	`
-
-	_, err := db.Exec(insertNoteQuery, userID, day, note)
-	if err != nil {
-		logger.Error("Error inserting note into database", zap.Error(err))
-	}
-	return err
-}
 
 func parseAddNoteArguments(args string) (string, string, error) {
 	parts := strings.Split(args, ";")
@@ -58,7 +46,7 @@ func HandleAddNoteCommand(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, 
 		return errors.New(reply)
 	}
 
-	err = addNote(logger, db, message.From.ID, date.Format("2006-01-02"), note)
+	err = queries.AddNote(logger, db, message.From, date.Format("2006-01-02"), note)
 	if err != nil {
 		reply := "Error adding note. Please try again."
 		utils.ReplyMessage(logger, bot, message, reply)
@@ -67,4 +55,39 @@ func HandleAddNoteCommand(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, 
 
 	utils.ReplyMessage(logger, bot, message, fmt.Sprintf("Note successfully added:\nDate: %s\nNote: %s", day, note))
 	return nil
+}
+
+func handleEraseAllNotes(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message) {
+	err := queries.EraseAllNotes(logger, db, message.From.ID)
+	if err != nil {
+		utils.ReplyMessage(logger, bot, message, "Error erasing all notes. Please try again.")
+	} else {
+		utils.ReplyMessage(logger, bot, message, "Succussfully deleted all notes.")
+	}
+}
+
+func HandleNotesCommand(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message, updates *tgbotapi.UpdatesChannel) {
+	utils.ReplyMessageWithOneTimeKeyboard(logger, bot, message, "Would you like to add note or erase all of them?", "Add", "Erase", "Go back")
+	for update := range *updates {
+		if update.Message == nil {
+			continue
+		}
+
+		if update.Message.Text == "Add" {
+			utils.ReplyMessageWithOneTimeKeyboard(logger, bot, update.Message, "To add a note please use the format: /add \"dd MMMM yyyy\" ; <note>\ne.g., /add 07 November 1917 ; my note", "Add", "Erase", "Go back")
+		} else if update.Message.IsCommand() {
+			if update.Message.Command() == "add" {
+				err := HandleAddNoteCommand(logger, bot, db, update.Message)
+				if err == nil {
+					return
+				}
+			}
+		} else if update.Message.Text == "Erase" {
+			handleEraseAllNotes(logger, bot, db, update.Message)
+			return
+		} else if update.Message.Text == "Go back" {
+			utils.ReplyMessage(logger, bot, update.Message, "Okay, let's go back")
+			return
+		}
+	}
 }

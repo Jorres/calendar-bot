@@ -12,9 +12,13 @@ func createMessage(message *tgbotapi.Message, reply string) tgbotapi.MessageConf
 }
 
 func sendOrLogError(logger *zap.Logger, bot *tgbotapi.BotAPI, message tgbotapi.MessageConfig) {
-	_, err := bot.Send(message)
-	if err != nil {
-		logger.Error("Error sending message", zap.Error(err))
+	// TODO In tests bot might be nil, will make proper mocking later
+	// This is to not send any messages while testing
+	if bot != nil {
+		_, err := bot.Send(message)
+		if err != nil {
+			logger.Error("Error sending message", zap.Error(err))
+		}
 	}
 }
 

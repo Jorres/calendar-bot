@@ -77,8 +77,8 @@ func main() {
 
 		if update.Message.IsCommand() {
 			switch update.Message.Command() {
-			case "add":
-				handlers.HandleAddNoteCommand(logger, bot, db, update.Message)
+			case "notes":
+				handlers.HandleNotesCommand(logger, bot, db, update.Message, &updates)
 			case "show":
 				handlers.HandleShowNotesCommand(logger, bot, db, update.Message)
 			case "permissions":

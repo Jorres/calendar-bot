@@ -8,6 +8,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 
+	"calendarbot/queries"
 	"calendarbot/utils"
 )
 
@@ -38,7 +39,7 @@ func waitForForwardedMessage(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.D
 		} else if update.Message.ForwardFrom.ID == botID {
 			utils.ReplyMessage(logger, bot, update.Message, "Ooh! So glad you like me :) However, I can't afford to look at your wonderful notes, sorry...")
 		} else {
-			inserted, err := utils.ChaeckAndInsertNewGrantedUser(logger, db, message.From.ID, update.Message.From)
+			inserted, err := queries.ChaeckAndInsertNewGrantedUser(logger, db, message.From, update.Message.ForwardFrom)
 			if err != nil {
 				logger.Error("Error in waiting forwarded message", zap.Error(err))
 			} else if !inserted {
@@ -80,7 +81,7 @@ func sendListMessageAndWait(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB
 		}
 	}
 	utils.ReplyMessage(logger, bot, message, reply)
-	utils.ReplyMessageWithOneTimeKeyboard(logger, bot, message, "Would you like add more or erase all of them?", "Add", "Erase")
+	utils.ReplyMessageWithOneTimeKeyboard(logger, bot, message, "Would you like add more or erase all of them?", "Add", "Erase", "Go back")
 
 	for update := range *updates {
 		if update.Message == nil {
@@ -92,7 +93,7 @@ func sendListMessageAndWait(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB
 			waitForForwardedMessage(logger, bot, db, update.Message, updates, botID)
 			return
 		} else if answer == "Erase" {
-			err := utils.DeleteAllGrantedUsers(logger, db, update.Message.From.ID)
+			err := queries.DeleteAllGrantedUsers(logger, db, update.Message.From.ID)
 			if err != nil {
 				msg := "An error occurred while deleting all granted users"
 				logger.Error(msg, zap.Error(err))
@@ -101,12 +102,15 @@ func sendListMessageAndWait(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB
 				utils.ReplyMessage(logger, bot, update.Message, "Successfully deleted!")
 			}
 			return
+		} else if answer == "Go back" {
+			utils.ReplyMessage(logger, bot, update.Message, "Okay, go back.")
+			return
 		}
 	}
 }
 
 func HandlePermissionsCommand(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message, updates *tgbotapi.UpdatesChannel, botID int64) {
-	granted_users, err := utils.GetUserPermissions(logger, db, message.From.ID)
+	granted_users, err := queries.GetUserPermissions(logger, db, message.From.ID)
 	if err != nil {
 		utils.ReplyMessage(logger, bot, message, "Error while getting permissions. Please try again later.")
 		return
