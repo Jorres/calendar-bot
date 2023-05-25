@@ -64,6 +64,8 @@ func main() {
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 60
 
+	helpMessage := "Available commands:\n/note -- edit your notes.\n/show -- show your notes.\n/show <user> -- show the notes of users who have given you access.\n/permissions - setting access permissions for other users."
+
 	updates := bot.GetUpdatesChan(updateConfig)
 	for update := range updates {
 		if update.Message == nil {
@@ -77,6 +79,8 @@ func main() {
 
 		if update.Message.IsCommand() {
 			switch update.Message.Command() {
+			case "start", "help":
+				utils.ReplyMessage(logger, bot, update.Message, helpMessage)
 			case "notes":
 				handlers.HandleNotesCommand(logger, bot, db, update.Message, &updates)
 			case "show":
