@@ -85,7 +85,15 @@ func testHandleAddNoteCommandSuccessful(date string, note string, t *testing.T) 
 		}
 	}
 
+	_, err = db.Exec("DROP TABLE users")
+	if err != nil {
+		t.Fatalf("Failed to drop table from mock database: %v", err)
+	}
 	_, err = db.Exec("DROP TABLE notes")
+	if err != nil {
+		t.Fatalf("Failed to drop table from mock database: %v", err)
+	}
+	_, err = db.Exec("DROP TABLE permissions")
 	if err != nil {
 		t.Fatalf("Failed to drop table from mock database: %v", err)
 	}
