@@ -62,7 +62,7 @@ func showDB(db *sql.DB) {
 
 func NotifySender(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB) {
 	for {
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Minute)
 
 		logger.Info("Running NotifySender..")
 		// fmt.Println("Running NotifySender..")
