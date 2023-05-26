@@ -40,10 +40,10 @@ func EraseAllNotes(logger *zap.Logger, db *sql.DB, userID int64) error {
 
 func GetUserNotes(logger *zap.Logger, db *sql.DB, userID int64) ([]string, error) {
 	selectUserNotesQuery := `
-	SELECT day, note
+	SELECT event_date, note
 	FROM notes
 	WHERE user_id = ?
-	ORDER BY day
+	ORDER BY event_date
 	`
 
 	rows, err := db.Query(selectUserNotesQuery, userID)
