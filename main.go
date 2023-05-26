@@ -67,7 +67,7 @@ func main() {
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 60
 
-	helpMessage := "Available commands:\n/note — `edit your notes.`\n/show — `show your notes.`\n/show `<user> — show the notes of users who have given you access.`\n/permissions — `setting access permissions for other users.`"
+	helpMessage := "Available commands:\n/notes — `edit your notes.`\n/show — `show your notes.`\n/show `<user>` — `show the notes of users who have given you access.`\n/permissions — `setting access permissions for other users.`"
 
 	// Notifying fiber
 	go queries.NotifySender(logger, bot, db)
