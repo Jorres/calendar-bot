@@ -1,8 +1,10 @@
 package queries
 
 import (
+	"calendarbot/utils"
 	"database/sql"
 	"fmt"
+	"html"
 	"strings"
 	"time"
 
@@ -117,16 +119,19 @@ func NotifySender(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB) {
 			logger.Error("Error updating events: ", zap.Ints("event_ids", event_ids), zap.Error(err))
 		}
 
+		if len(messages) > 0 {
+			logger.Info("Sending notify!")
+		}
 		for _, message := range messages {
 			chats, err := GetAllGrantedUsersChats(logger, db, message.userID)
-			message_string := " event is starting in 5 minutes!\n\n" + message.note + "\nPlanned at:" + message.event_date
-			bot.Send(tgbotapi.NewMessage(message.chatID, "Your"+message_string))
+			if err != nil {
+				continue
+			}
+
+			message_string := html.EscapeString(" event is starting in 5 minutes!`\n\n"+utils.TransformMessage(message.note)) + "\n\n*_Planned at_: " + utils.TransformMessage(message.event_date) + "*"
+			utils.SendMessage(logger, bot, message.chatID, "📅 `Your"+message_string)
 			for _, chat := range chats {
-				msg := tgbotapi.NewMessage(chat.chat, "@"+chat.login+message_string)
-				_, err = bot.Send(msg)
-				if err != nil {
-					logger.Warn("Could not send a notify for "+message.login, zap.Error(err))
-				}
+				utils.SendMessage(logger, bot, chat.chat, "📅 @`"+chat.login+message_string)
 			}
 		}
 	}

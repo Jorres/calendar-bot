@@ -94,7 +94,7 @@ func main() {
 			case "permissions":
 				handlers.HandlePermissionsCommand(logger, bot, db, update.Message, &updates, botID)
 			default:
-				utils.ReplyMessage(logger, bot, update.Message, "Unknown command.")
+				utils.ReplyMessage(logger, bot, update.Message, "Unknown command\\.")
 			}
 		}
 	}

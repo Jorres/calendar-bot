@@ -1,6 +1,7 @@
 package queries
 
 import (
+	"calendarbot/utils"
 	"database/sql"
 	"fmt"
 
@@ -61,7 +62,7 @@ func GetUserNotes(logger *zap.Logger, db *sql.DB, userID int64) ([]string, error
 			logger.Error("Error scanning row", zap.Error(err))
 			return nil, err
 		}
-		notes = append(notes, fmt.Sprintf("%s: %s", day, note))
+		notes = append(notes, fmt.Sprintf("__%s__: %s", utils.TransformMessage(day), utils.TransformMessage(note)))
 	}
 
 	return notes, nil

@@ -42,9 +42,9 @@ func showGrantedUsersNotes(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB,
 		return
 	}
 	if !granted {
-		utils.ReplyMessage(logger, bot, message, fmt.Sprintf("@%s did not give you an access", granted_user))
+		utils.ReplyMessage(logger, bot, message, utils.TransformMessage(fmt.Sprintf("@%s did not give you an access", granted_user)))
 	} else {
-		showUsersNotes(logger, bot, db, message, granted_user_id, "@"+granted_user)
+		showUsersNotes(logger, bot, db, message, granted_user_id, utils.TransformMessage("@")+granted_user)
 	}
 }
 

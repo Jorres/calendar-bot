@@ -1,8 +1,6 @@
 package utils
 
 import (
-	"html"
-	"regexp"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -12,25 +10,16 @@ import (
 func createMessage(message *tgbotapi.Message, reply string) tgbotapi.MessageConfig {
 	msg := tgbotapi.NewMessage(message.Chat.ID, reply)
 	msg.ReplyToMessageID = message.MessageID
+	msg.ParseMode = tgbotapi.ModeMarkdownV2
 	return msg
 }
 
-func escapeUsernames(text string) string {
-	// Create a regular expression that matches usernames.
-	pattern := regexp.MustCompile(`^@[a-zA-Z0-9_]+$`)
-
-	// Replace all matches with the escaped version.
-	return pattern.ReplaceAllString(text, html.EscapeString(text))
-}
-
-func transformMessage(message tgbotapi.MessageConfig) tgbotapi.MessageConfig {
-	escapes := []string{"<", ">", ".", "-", "+", "(", ")", "{", "}", "[", "]", "!", "?", "@"}
+func TransformMessage(message string) string {
+	escapes := []string{"_", "*", "[", "]", "(", ")", "~", "`", ">", "#", "+", "-", "=", "|", "{", "}", ".", "!", "?", "@"}
 	for _, escape := range escapes {
-		message.Text = strings.ReplaceAll(message.Text, escape, "\\"+escape)
+		message = strings.ReplaceAll(message, escape, "\\"+escape)
 	}
-	message.Text = escapeUsernames(message.Text)
 
-	message.ParseMode = tgbotapi.ModeMarkdownV2
 	return message
 }
 
@@ -45,8 +34,14 @@ func sendOrLogError(logger *zap.Logger, bot *tgbotapi.BotAPI, message tgbotapi.M
 	}
 }
 
+func SendMessage(logger *zap.Logger, bot *tgbotapi.BotAPI, chatID int64, message string) {
+	msg := tgbotapi.NewMessage(chatID, message)
+	msg.ParseMode = tgbotapi.ModeMarkdownV2
+	sendOrLogError(logger, bot, msg)
+}
+
 func ReplyMessage(logger *zap.Logger, bot *tgbotapi.BotAPI, message *tgbotapi.Message, reply string) {
-	sendOrLogError(logger, bot, transformMessage(createMessage(message, reply)))
+	sendOrLogError(logger, bot, createMessage(message, reply))
 }
 
 func ReplyMessageOriginal(logger *zap.Logger, bot *tgbotapi.BotAPI, message *tgbotapi.Message, reply string) {
@@ -65,5 +60,5 @@ func ReplyMessageWithOneTimeKeyboard(logger *zap.Logger, bot *tgbotapi.BotAPI, m
 	}
 	msg.ReplyMarkup = tgbotapi.NewOneTimeReplyKeyboard(buttons)
 
-	sendOrLogError(logger, bot, transformMessage(msg))
+	sendOrLogError(logger, bot, msg)
 }
