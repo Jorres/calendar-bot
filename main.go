@@ -3,14 +3,17 @@ package main
 import (
 	"bufio"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	_ "github.com/mattn/go-sqlite3"
 
 	"calendarbot/handlers"
+	"calendarbot/queries"
 	"calendarbot/utils"
 
 	"go.uber.org/zap"
@@ -64,7 +67,10 @@ func main() {
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 60
 
-	helpMessage := "Available commands:\n/note -- edit your notes.\n/show -- show your notes.\n/show <user> -- show the notes of users who have given you access.\n/permissions - setting access permissions for other users."
+	helpMessage := "Available commands:\n/note — `edit your notes.`\n/show — `show your notes.`\n/show `<user> — show the notes of users who have given you access.`\n/permissions — `setting access permissions for other users.`"
+
+	// Notifying fiber
+	go queries.NotifySender(logger, bot, db)
 
 	updates := bot.GetUpdatesChan(updateConfig)
 	for update := range updates {
@@ -92,6 +98,12 @@ func main() {
 			}
 		}
 	}
+
+	// Ctrl+C, SIGTERM
+	signalCh := make(chan os.Signal, 1)
+	signal.Notify(signalCh, os.Interrupt, syscall.SIGTERM)
+	<-signalCh
+	logger.Info("Shutting down bot...")
 }
 
 func readTokenFromFile(filename string) (string, error) {

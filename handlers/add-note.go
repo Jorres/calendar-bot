@@ -29,9 +29,39 @@ func parseAddNoteArguments(args string) (string, string, error) {
 	return day, note, nil
 }
 
+func parseDatetimeToUTC(datetimeStr string) (time.Time, error) {
+	// Parse the datetime string in the provided formats
+	formats := []string{
+		"2006-01-02 15:04 -07:00",
+		"2006-01-02 15:04",
+		"02 January 2006, 15:04",
+		"02 January 2006, 15:04 -07:00",
+	}
+
+	var parsedTime time.Time
+	var err error
+
+	// Attempt to parse the datetime string using each format
+	for _, format := range formats {
+		parsedTime, err = time.Parse(format, datetimeStr)
+		if err == nil {
+			break
+		}
+	}
+
+	if err != nil {
+		return time.Time{}, fmt.Errorf("failed to parse datetime: %w", err)
+	}
+
+	// Convert the parsed time to UTC
+	utcTime := parsedTime.UTC()
+
+	return utcTime, nil
+}
+
 func HandleAddNoteCommand(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message) error {
 	args := message.CommandArguments()
-	day, note, err := parseAddNoteArguments(args)
+	datetime_string, note, err := parseAddNoteArguments(args)
 
 	if err != nil {
 		reply := "Please provide a date and a note in the format: /add <date> ; <note>"
@@ -39,21 +69,21 @@ func HandleAddNoteCommand(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, 
 		return errors.New(reply)
 	}
 
-	date, err := time.Parse("02 January 2006", day)
+	date, err := parseDatetimeToUTC(datetime_string)
 	if err != nil {
-		reply := "Invalid date format. Please use the format: \"dd MMMM yyyy\", e.g., \"27 April 2023\""
+		reply := "Invalid date format. Please use provided formats."
 		utils.ReplyMessage(logger, bot, message, reply)
 		return errors.New(reply)
 	}
 
-	err = queries.AddNote(logger, db, message.From, date.Format("2006-01-02"), note)
+	err = queries.AddNote(logger, db, message, date.Format("2006-01-02 15:04:05"), note)
 	if err != nil {
 		reply := "Error adding note. Please try again."
 		utils.ReplyMessage(logger, bot, message, reply)
 		return errors.New(reply)
 	}
 
-	utils.ReplyMessage(logger, bot, message, fmt.Sprintf("Note successfully added:\nDate: %s\nNote: %s", day, note))
+	utils.ReplyMessage(logger, bot, message, fmt.Sprintf("Note successfully added:\nDate: %s\nNote: %s", datetime_string, note))
 	return nil
 }
 
@@ -74,7 +104,7 @@ func HandleNotesCommand(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, me
 		}
 
 		if update.Message.Text == "Add" {
-			utils.ReplyMessageWithOneTimeKeyboard(logger, bot, update.Message, "To add a note please use the format: /add \"dd MMMM yyyy\" ; <note>\ne.g., /add 07 November 1917 ; my note", "Add", "Erase", "Go back")
+			utils.ReplyMessageWithOneTimeKeyboard(logger, bot, update.Message, "To add a note please use the format: /add <date> ; <note>\nDate formats are:\n`/add 1917-11-07 09:20 ; my note`\n`/add 07 November 1917, 09:20 ; my note`\nIf you are not in UTC timezome, please specify your zone using format\n`/add 1917-11-07 09:20 +03:00 ; my note with time zone`\n`/add 07 November 1917, 09:20 -07:00 ; my note with zone`", "Add", "Erase", "Go back")
 		} else if update.Message.IsCommand() {
 			if update.Message.Command() == "add" {
 				err := HandleAddNoteCommand(logger, bot, db, update.Message)

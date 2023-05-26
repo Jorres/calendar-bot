@@ -30,7 +30,7 @@ func waitForForwardedMessage(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.D
 		)
 
 		if update.Message.ForwardFrom == nil {
-			utils.ReplyMessage(logger, bot, update.Message, "It is not forwarded message. No new users will be added")
+			utils.ReplyMessage(logger, bot, update.Message, "It is not forwarded message or forwarded message from user with parivacy settings enabled. No new users will be added")
 			return
 		}
 
@@ -39,7 +39,7 @@ func waitForForwardedMessage(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.D
 		} else if update.Message.ForwardFrom.ID == botID {
 			utils.ReplyMessage(logger, bot, update.Message, "Ooh! So glad you like me :) However, I can't afford to look at your wonderful notes, sorry...")
 		} else {
-			inserted, err := queries.ChaeckAndInsertNewGrantedUser(logger, db, message.From, update.Message.ForwardFrom)
+			inserted, err := queries.ChaeckAndInsertNewGrantedUser(logger, db, message.From, update.Message.ForwardFrom, message.Chat.ID)
 			if err != nil {
 				logger.Error("Error in waiting forwarded message", zap.Error(err))
 			} else if !inserted {
@@ -80,7 +80,7 @@ func sendListMessageAndWait(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB
 			break
 		}
 	}
-	utils.ReplyMessage(logger, bot, message, reply)
+	utils.ReplyMessageOriginal(logger, bot, message, reply)
 	utils.ReplyMessageWithOneTimeKeyboard(logger, bot, message, "Would you like add more or erase all of them?", "Add", "Erase", "Go back")
 
 	for update := range *updates {

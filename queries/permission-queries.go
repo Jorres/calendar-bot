@@ -39,8 +39,8 @@ func checkGrantedUserExists(logger *zap.Logger, db *sql.DB, userID int64, grante
 	return false, err
 }
 
-func insertGrantedUser(logger *zap.Logger, db *sql.DB, user, grantedUser *tgbotapi.User) error {
-	InsertUser(logger, db, user)
+func insertGrantedUser(logger *zap.Logger, db *sql.DB, user, grantedUser *tgbotapi.User, chat_id int64) error {
+	InsertUserWithChat(logger, db, user, chat_id)
 	InsertUser(logger, db, grantedUser)
 
 	kInsertNewGrantedUser := `
@@ -118,7 +118,7 @@ func CheckUserGavePermission(logger *zap.Logger, db *sql.DB, userID int64, grant
 	return false, 0, nil
 }
 
-func ChaeckAndInsertNewGrantedUser(logger *zap.Logger, db *sql.DB, user, grantedUser *tgbotapi.User) (bool, error) {
+func ChaeckAndInsertNewGrantedUser(logger *zap.Logger, db *sql.DB, user, grantedUser *tgbotapi.User, chat_id int64) (bool, error) {
 	exists, err := checkGrantedUserExists(logger, db, user.ID, grantedUser)
 	if err != nil {
 		logger.Error("Check if granted user exists failed", zap.Error(err))
@@ -130,7 +130,7 @@ func ChaeckAndInsertNewGrantedUser(logger *zap.Logger, db *sql.DB, user, granted
 		return false, err
 	}
 
-	err = insertGrantedUser(logger, db, user, grantedUser)
+	err = insertGrantedUser(logger, db, user, grantedUser, chat_id)
 	if err != nil {
 		logger.Error("Insertion of granted user failed", zap.Error(err))
 		return false, err
@@ -150,4 +150,49 @@ func DeleteAllGrantedUsers(logger *zap.Logger, db *sql.DB, userID int64) error {
 		logger.Error("Error inserting note into database", zap.Error(err))
 	}
 	return err
+}
+
+func GetAllGrantedUsersChats(logger *zap.Logger, db *sql.DB, userID int64) ([]struct {
+	chat  int64
+	login string
+}, error) {
+	kGetAllGrantedUsersChats := `
+	SELECT u.chat_id, u.name
+	FROM permissions p
+	INNER JOIN users u ON p.granted_user_id = u.id
+	WHERE p.user_id = ?
+	  AND u.chat_id IS NOT NULL
+	`
+
+	rows, err := db.Query(kGetAllGrantedUsersChats, userID)
+	if err != nil {
+		logger.Error("Error while getting user permission", zap.Error(err))
+		return []struct {
+			chat  int64
+			login string
+		}{}, err
+	}
+	defer rows.Close()
+
+	var chats []struct {
+		chat  int64
+		login string
+	}
+	for rows.Next() {
+		var chatID int64
+		var name string
+		err := rows.Scan(&chatID, &name)
+		if err != nil {
+			logger.Error("Error while scanning row", zap.Error(err))
+			return []struct {
+				chat  int64
+				login string
+			}{}, err
+		}
+		chats = append(chats, struct {
+			chat  int64
+			login string
+		}{chatID, name})
+	}
+	return chats, nil
 }

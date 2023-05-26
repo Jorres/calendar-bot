@@ -1,6 +1,10 @@
 package utils
 
 import (
+	"html"
+	"regexp"
+	"strings"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 )
@@ -9,6 +13,25 @@ func createMessage(message *tgbotapi.Message, reply string) tgbotapi.MessageConf
 	msg := tgbotapi.NewMessage(message.Chat.ID, reply)
 	msg.ReplyToMessageID = message.MessageID
 	return msg
+}
+
+func escapeUsernames(text string) string {
+	// Create a regular expression that matches usernames.
+	pattern := regexp.MustCompile(`^@[a-zA-Z0-9_]+$`)
+
+	// Replace all matches with the escaped version.
+	return pattern.ReplaceAllString(text, html.EscapeString(text))
+}
+
+func transformMessage(message tgbotapi.MessageConfig) tgbotapi.MessageConfig {
+	escapes := []string{"<", ">", ".", "-", "+", "(", ")", "{", "}", "[", "]", "!", "?", "@"}
+	for _, escape := range escapes {
+		message.Text = strings.ReplaceAll(message.Text, escape, "\\"+escape)
+	}
+	message.Text = escapeUsernames(message.Text)
+
+	message.ParseMode = tgbotapi.ModeMarkdownV2
+	return message
 }
 
 func sendOrLogError(logger *zap.Logger, bot *tgbotapi.BotAPI, message tgbotapi.MessageConfig) {
@@ -23,6 +46,10 @@ func sendOrLogError(logger *zap.Logger, bot *tgbotapi.BotAPI, message tgbotapi.M
 }
 
 func ReplyMessage(logger *zap.Logger, bot *tgbotapi.BotAPI, message *tgbotapi.Message, reply string) {
+	sendOrLogError(logger, bot, transformMessage(createMessage(message, reply)))
+}
+
+func ReplyMessageOriginal(logger *zap.Logger, bot *tgbotapi.BotAPI, message *tgbotapi.Message, reply string) {
 	sendOrLogError(logger, bot, createMessage(message, reply))
 }
 
@@ -38,5 +65,5 @@ func ReplyMessageWithOneTimeKeyboard(logger *zap.Logger, bot *tgbotapi.BotAPI, m
 	}
 	msg.ReplyMarkup = tgbotapi.NewOneTimeReplyKeyboard(buttons)
 
-	sendOrLogError(logger, bot, msg)
+	sendOrLogError(logger, bot, transformMessage(msg))
 }

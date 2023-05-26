@@ -25,17 +25,20 @@ func InitDB(filename string) (*sql.DB, error) {
 		CREATE TABLE IF NOT EXISTS users (
 			id BIGINT PRIMARY KEY,
 			name TEXT,
+			chat_id BIGINT,
 
 			CONSTRAINT unique__id_name UNIQUE (id, name)
 		);
 
 		CREATE TABLE IF NOT EXISTS notes (
-			id BIGINT PRIMARY KEY,
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			user_id BIGINT,
-			day TEXT,
+			event_date DATETIME,
 			note TEXT,
+			reminder_sent INTEGER,
 
-			FOREIGN KEY (user_id) REFERENCES users (id)
+			FOREIGN KEY (user_id) REFERENCES users (id),
+			CONSTRAINT unique__id__user_id UNIQUE (id, user_id)
 		);
 
 		CREATE TABLE IF NOT EXISTS permissions (

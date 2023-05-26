@@ -8,15 +8,17 @@ import (
 	"go.uber.org/zap"
 )
 
-func AddNote(logger *zap.Logger, db *sql.DB, user *tgbotapi.User, day, note string) error {
-	InsertUser(logger, db, user)
+func AddNote(logger *zap.Logger, db *sql.DB, message *tgbotapi.Message, day, note string) error {
+	user := message.From
+	InsertUserWithChat(logger, db, user, message.Chat.ID)
 
 	insertNoteQuery := `
-	INSERT INTO notes (user_id, day, note)
-	VALUES (?, ?, ?)
+	INSERT INTO notes (user_id, event_date, note, reminder_sent)
+	VALUES (?, ?, ?, 0)
 	`
 
 	_, err := db.Exec(insertNoteQuery, user.ID, day, note)
+	fmt.Printf("INSERTED user.ID=%d, day='%s', note='%s'\n", user.ID, day, note)
 	if err != nil {
 		logger.Error("Error inserting note into database", zap.Error(err))
 	}
