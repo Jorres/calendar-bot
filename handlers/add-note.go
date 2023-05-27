@@ -110,10 +110,10 @@ func HandleNotesCommand(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, me
 		} else if update.Message.IsCommand() {
 			if update.Message.Command() == "add" {
 				err := HandleAddNoteCommand(logger, bot, db, update.Message)
-				if err == nil {
+				if err != nil {
 					logger.Error("User error on add logic", zap.Error(err))
 				}
-				if err != nil {
+				if err == nil {
 					return
 				}
 			}
