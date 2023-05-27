@@ -14,12 +14,12 @@ import (
 func showUsersNotes(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, message *tgbotapi.Message, userID int64, user_name string) {
 	notes, err := queries.GetUserNotes(logger, db, userID)
 	if err != nil {
-		utils.ReplyMessage(logger, bot, message, "Error fetching notes. Please try again.")
+		utils.ReplyMessage(logger, bot, message, "Error fetching notes\\. Please try again\\.")
 		return
 	}
 
 	if len(notes) == 0 {
-		utils.ReplyMessage(logger, bot, message, fmt.Sprintf("%s have no notes.", user_name))
+		utils.ReplyMessage(logger, bot, message, fmt.Sprintf("%s have no notes\\.", user_name))
 		return
 	}
 
@@ -32,13 +32,13 @@ func showGrantedUsersNotes(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB,
 		granted_user = granted_user[1:]
 	}
 	if strings.Count(granted_user, " ") > 1 {
-		utils.ReplyMessage(logger, bot, message, "The query contains more than one word.\nMust be only 1 login.\nFor example, `/show @three`")
+		utils.ReplyMessage(logger, bot, message, "The query contains more than one word\\.\nMust be only 1 login\\.\nFor example, `/show @three`")
 	}
 
 	granted, granted_user_id, err := queries.CheckUserGavePermission(logger, db, message.From.ID, granted_user)
 	if err != nil {
 		logger.Error("Got an error while checking granted user", zap.Error(err))
-		utils.ReplyMessage(logger, bot, message, fmt.Sprintf("An error occurred while checking if @%s granted you an access. Please try later. error: %s", granted_user, err))
+		utils.ReplyMessage(logger, bot, message, fmt.Sprintf("An error occurred while checking if @%s granted you an access\\. Please try later\\. error: %s", granted_user, err))
 		return
 	}
 	if !granted {
