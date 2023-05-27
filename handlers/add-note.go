@@ -73,7 +73,7 @@ func HandleAddNoteCommand(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, 
 
 	date, err := parseDatetimeToUTC(datetime_string)
 	if err != nil {
-		reply := "Invalid date format. Please use provided formats."
+		reply := "Invalid date format. Please use provided formats. "
 		utils.ReplyMessage(logger, bot, message, utils.TransformMessage(reply)+formatsHelp)
 		return errors.New(reply)
 	}
@@ -112,6 +112,9 @@ func HandleNotesCommand(logger *zap.Logger, bot *tgbotapi.BotAPI, db *sql.DB, me
 				err := HandleAddNoteCommand(logger, bot, db, update.Message)
 				if err == nil {
 					logger.Error("User error on add logic", zap.Error(err))
+				}
+				if err != nil {
+					return
 				}
 			}
 		} else if update.Message.Text == "Erase" {
