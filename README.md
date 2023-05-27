@@ -28,20 +28,17 @@ go run main.go
 
 #### Interacting with the bot
 
-Text the @calendarNoteBot (https://t.me/calendarNoteBot) and do:
+Text the @calendarNoteBot (https://t.me/calendarNoteBot) and call `/help`.
 
-- To add the note (make sure you have the ";" symbol in between the date and the
-   actual message):
+Main features include:
 
-```
-/add 27 April 2023 ; take out the trash
-```
-
-- To view all the notes that you have:
-
-```
-/show
-```
+- `/notes` command allows you to add a note with a notification. Bot will guide
+  you through the process.
+- `/permissions` command allows you to allow other users to view your notes.
+- `/show` command allows you to view all your notes (and notes of other people who
+  have granted permissions to you)
+- 5 minutes before the actual event, the bot will send you the message with a notification!
+- ![Notification](./demo-pics/pasted_img_20230527123847.png)
 
 Enjoy!
 
