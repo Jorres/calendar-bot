@@ -1,11 +1,11 @@
 ## Calendar bot
 
-This is a fairly simple project.
+This is a fairly simple project
 
 #### Prerequisites
 
-- Ensure you have `go` installed, tested on 1.19
-- `go mod tidy` will install dependencies
+- Ensure you have `go` >= 1.19 installed
+- Run `go mod tidy` to install dependencies
 
 #### Running tests
 
@@ -36,9 +36,11 @@ Main features include:
   you through the process.
 - `/permissions` command allows you to allow other users to view your notes.
 - `/show` command allows you to view all your notes (and notes of other people who
-  have granted permissions to you)
-- 5 minutes before the actual event, the bot will send you the message with a notification!
-- ![Notification](./demo-pics/pasted_img_20230527123847.png)
+  have granted permissions to you, via `/show username`)
+- 5 minutes before the actual event, the bot will send you the message with a notification, here's how that looks like:
+
+
+![Notification](./demo-pics/pasted_img_20230527123847.png)
 
 Enjoy!
 
@@ -51,5 +53,5 @@ Obviously, it is a debug and testing setup, not a production ready one. We simpl
 don't have money to run production-ready ElasticSearch, sorry :(
 
 However, you can search the logs of our application using a public ipv4-address
-of the machine. Kibana is available at http://158.160.42.148:5601/app/discover, login-less access
+of the machine. Kibana is available at http://158.160.42.148:5601/app/discover, anonymous access
 is provided for the simplicity of testing and checking.
